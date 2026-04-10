@@ -1,0 +1,16 @@
+{
+  "name": "batch-image-server",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest --forceExit"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
+  }
+}

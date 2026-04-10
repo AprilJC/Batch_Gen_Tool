@@ -1,0 +1,10 @@
+{
+  "name": "batch-image-tool",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm --prefix server start\" \"npm --prefix client run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
