@@ -24,7 +24,7 @@ export default function ConfigPanel({
           placeholder="Describe how to transform the images..."
           value={prompt}
           onChange={(e) => onPromptChange(e.target.value)}
-          rows={2}
+          rows={5}
         />
       </div>
       <div className="config-actions">

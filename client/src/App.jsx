@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { generateImage } from './api';
 import ConfigPanel from './ConfigPanel';
 import ImageGrid from './ImageGrid';
+import Lightbox from './Lightbox';
 import JSZip from 'jszip';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -23,15 +24,29 @@ export default function App() {
   const [images, setImages] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadWarning, setUploadWarning] = useState('');
+  const [history, setHistory] = useState([]);
+  const [lightboxImage, setLightboxImage] = useState(null);
   const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
 
-  async function handleFolderSelect(e) {
+  async function handleFilesSelect(e) {
     const files = Array.from(e.target.files);
     const valid = files.filter(
       (f) => ACCEPTED_TYPES.includes(f.type) && f.size <= MAX_FILE_SIZE
     );
     const oversized = files.filter((f) => f.size > MAX_FILE_SIZE);
     const truncated = valid.slice(0, MAX_IMAGES);
+
+    // Save current batch to history if it has completed images
+    const doneCurrent = images.filter((img) => img.status === 'done');
+    if (doneCurrent.length > 0) {
+      setHistory((prev) => [{
+        id: crypto.randomUUID(),
+        prompt,
+        timestamp: new Date().toLocaleTimeString(),
+        images: doneCurrent,
+      }, ...prev]);
+    }
 
     const warnings = [];
     if (oversized.length > 0) warnings.push(`${oversized.length} file(s) over 10MB skipped`);
@@ -163,25 +178,40 @@ export default function App() {
 
         <div
           className="upload-zone"
-          onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
-            handleFolderSelect({ target: { files: e.dataTransfer.files } });
+            handleFilesSelect({ target: { files: e.dataTransfer.files } });
           }}
         >
           <input
             ref={fileInputRef}
             type="file"
+            multiple
+            accept={ACCEPTED_TYPES.join(',')}
+            onChange={handleFilesSelect}
+            style={{ display: 'none' }}
+          />
+          <input
+            ref={folderInputRef}
+            type="file"
             webkitdirectory=""
             multiple
             accept={ACCEPTED_TYPES.join(',')}
-            onChange={handleFolderSelect}
+            onChange={handleFilesSelect}
             style={{ display: 'none' }}
           />
-          <span>
-            📁 Drop folder here or <span className="upload-zone__link">click to select folder</span>
-            {images.length > 0 && ` · ${images.length}/${MAX_IMAGES} images loaded`}
+          <div className="upload-zone__buttons">
+            <button className="btn btn--secondary" onClick={() => fileInputRef.current?.click()}>
+              📄 Select Images
+            </button>
+            <button className="btn btn--secondary" onClick={() => folderInputRef.current?.click()}>
+              📁 Select Folder
+            </button>
+          </div>
+          <span className="upload-zone__hint">
+            or drag and drop here
+            {images.length > 0 && ` · ${images.length}/${MAX_IMAGES} loaded`}
           </span>
           {uploadWarning && <div className="upload-zone__warning">{uploadWarning}</div>}
         </div>
@@ -191,8 +221,39 @@ export default function App() {
           isGenerating={isGenerating}
           onRegenerate={handleRegenerate}
           onDownload={handleDownloadOne}
+          onExpand={(img) => setLightboxImage(img)}
         />
+
+        {history.length > 0 && (
+          <div className="history-section">
+            <div className="history-section-title">HISTORY</div>
+            {history.map((batch) => (
+              <details key={batch.id} className="history-batch">
+                <summary className="history-batch-summary">
+                  <span className="history-batch__prompt">{batch.prompt}</span>
+                  <span className="history-batch__meta">
+                    {batch.images.length} image{batch.images.length !== 1 ? 's' : ''} · {batch.timestamp}
+                  </span>
+                </summary>
+                <div className="history-grid">
+                  {batch.images.map((img) => (
+                    <div
+                      key={img.id}
+                      className="history-item"
+                      onClick={() => setLightboxImage(img)}
+                    >
+                      <img src={img.outputDataUrl} alt={img.filename} className="history-item__img" />
+                      <div className="history-item__filename">{img.filename}</div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ))}
+          </div>
+        )}
       </main>
+
+      <Lightbox image={lightboxImage} onClose={() => setLightboxImage(null)} />
     </div>
   );
 }
