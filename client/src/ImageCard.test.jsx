@@ -65,3 +65,10 @@ test('calls onRegenerate when Regenerate is clicked', async () => {
   await userEvent.click(screen.getByRole('button', { name: /regenerate/i }));
   expect(onRegenerate).toHaveBeenCalledTimes(1);
 });
+
+test('calls onDownload when Download is clicked', async () => {
+  const onDownload = vi.fn();
+  render(<ImageCard {...baseProps} status="done" outputDataUrl="data:image/png;base64,out" onDownload={onDownload} />);
+  await userEvent.click(screen.getByRole('button', { name: /download/i }));
+  expect(onDownload).toHaveBeenCalledTimes(1);
+});
