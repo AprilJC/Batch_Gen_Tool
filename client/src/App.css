@@ -1,0 +1,171 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* Layout */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+.app-header { padding: 16px 24px; border-bottom: 1px solid #30363d; }
+.app-header h1 { font-size: 18px; font-weight: 600; color: #e6edf3; }
+.app-main { flex: 1; padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+/* Config panel */
+.config-panel {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.config-field { display: flex; flex-direction: column; gap: 4px; }
+.config-field--grow { flex: 1; min-width: 200px; }
+.config-label { font-size: 10px; font-weight: 600; color: #8b949e; letter-spacing: 0.05em; }
+.config-input {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: #e6edf3;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 200px;
+}
+.config-input:focus { border-color: #58a6ff; }
+.config-textarea { resize: vertical; min-height: 52px; font-family: inherit; }
+.config-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* Buttons */
+.btn {
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn--primary { background: #238636; color: #fff; }
+.btn--primary:not(:disabled):hover { background: #2ea043; }
+.btn--secondary { background: #21262d; border: 1px solid #30363d; color: #e6edf3; }
+.btn--secondary:not(:disabled):hover { background: #30363d; }
+.btn--small { flex: 1; padding: 5px 8px; font-size: 12px; background: #21262d; border: 1px solid #30363d; color: #e6edf3; }
+.btn--small:not(:disabled):hover { background: #30363d; }
+
+/* Upload zone */
+.upload-zone {
+  background: #161b22;
+  border: 2px dashed #30363d;
+  border-radius: 8px;
+  padding: 14px 20px;
+  text-align: center;
+  color: #8b949e;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.upload-zone:hover { border-color: #58a6ff; }
+.upload-zone__link { color: #58a6ff; }
+.upload-zone__warning { font-size: 12px; color: #f0883e; }
+
+/* Image grid */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+/* Image card */
+.image-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s;
+}
+.image-card--generating { border-color: #58a6ff; }
+.image-card--done { border-color: #238636; }
+.image-card--error { border-color: #da3633; }
+
+.image-card__filename {
+  font-size: 11px;
+  color: #8b949e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-card__images { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.image-card__slot { display: flex; flex-direction: column; gap: 4px; }
+.image-card__slot-label { font-size: 9px; font-weight: 600; letter-spacing: 0.05em; color: #8b949e; }
+.image-card__slot-label--generating { color: #58a6ff; }
+.image-card__slot-label--done { color: #3fb950; }
+.image-card__slot-label--error { color: #f85149; }
+
+.image-card__img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #0d1117;
+}
+.image-card__placeholder {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  border: 1px dashed #30363d;
+  background: #0d1117;
+}
+.image-card__error {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: #1a0c0c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #f85149;
+  padding: 6px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.image-card__actions { display: flex; gap: 6px; }
+
+/* Spinner */
+.spinner {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: #0d1117;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.spinner::after {
+  content: '';
+  width: 28px;
+  height: 28px;
+  border: 3px solid #30363d;
+  border-top-color: #58a6ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
