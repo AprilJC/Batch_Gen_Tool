@@ -1,6 +1,11 @@
+const MODELS = [
+  { id: 'gemini-3.1-flash-image-preview', label: 'nanobana2' },
+  { id: 'gemini-3-pro-image-preview',     label: 'nanobanana pro' },
+];
+
 export default function ConfigPanel({
-  apiKey, prompt, images, isGenerating,
-  onApiKeyChange, onPromptChange, onGenerateAll, onDownloadAll,
+  apiKey, prompt, model, images, isGenerating,
+  onApiKeyChange, onPromptChange, onModelChange, onGenerateAll, onDownloadAll,
 }) {
   const hasDone = images.some((img) => img.status === 'done');
   const canGenerate = !!apiKey && !!prompt && images.length > 0 && !isGenerating;
@@ -16,6 +21,18 @@ export default function ConfigPanel({
           value={apiKey}
           onChange={(e) => onApiKeyChange(e.target.value)}
         />
+      </div>
+      <div className="config-field">
+        <label className="config-label">MODEL</label>
+        <select
+          className="config-input config-select"
+          value={model}
+          onChange={(e) => onModelChange(e.target.value)}
+        >
+          {MODELS.map((m) => (
+            <option key={m.id} value={m.id}>{m.label}</option>
+          ))}
+        </select>
       </div>
       <div className="config-field config-field--grow">
         <label className="config-label">PROMPT</label>

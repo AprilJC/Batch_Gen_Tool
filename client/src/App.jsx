@@ -21,6 +21,7 @@ function readFileAsDataURL(file) {
 export default function App() {
   const [apiKey, setApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
+  const [model, setModel] = useState('gemini-3.1-flash-image-preview');
   const [images, setImages] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadWarning, setUploadWarning] = useState('');
@@ -80,6 +81,7 @@ export default function App() {
           mimeType: img.mimeType,
           prompt,
           apiKey,
+          model,
         });
         setImages((prev) =>
           prev.map((i) =>
@@ -109,6 +111,7 @@ export default function App() {
         mimeType: img.mimeType,
         prompt,
         apiKey,
+        model,
       });
       setImages((prev) =>
         prev.map((i) =>
@@ -168,10 +171,12 @@ export default function App() {
         <ConfigPanel
           apiKey={apiKey}
           prompt={prompt}
+          model={model}
           images={images}
           isGenerating={isGenerating}
           onApiKeyChange={setApiKey}
           onPromptChange={setPrompt}
+          onModelChange={setModel}
           onGenerateAll={handleGenerateAll}
           onDownloadAll={handleDownloadAll}
         />

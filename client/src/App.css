@@ -40,6 +40,7 @@ body {
   min-width: 200px;
 }
 .config-input:focus { border-color: #58a6ff; }
+.config-select { cursor: pointer; min-width: 0; }
 .config-textarea { resize: vertical; min-height: 110px; font-family: inherit; }
 .config-actions { display: flex; gap: 8px; flex-shrink: 0; }
 

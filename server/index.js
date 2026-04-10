@@ -12,10 +12,16 @@ app.post('/api/generate', async (req, res) => {
     return res.status(400).json({ error: 'API key required' });
   }
 
-  const { image, mimeType, prompt } = req.body;
+  const { image, mimeType, prompt, model: modelId } = req.body;
   if (!image || !mimeType || !prompt) {
     return res.status(400).json({ error: 'image, mimeType, and prompt are required' });
   }
+
+  const ALLOWED_MODELS = {
+    'gemini-3.1-flash-image-preview': true,
+    'gemini-3-pro-image-preview': true,
+  };
+  const resolvedModel = ALLOWED_MODELS[modelId] ? modelId : 'gemini-3.1-flash-image-preview';
 
   // Strip "data:image/jpeg;base64," prefix to get raw base64
   const base64Data = image.replace(/^data:[^;]+;base64,/, '');
@@ -23,7 +29,7 @@ app.post('/api/generate', async (req, res) => {
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3.1-flash-image-preview',
+      model: resolvedModel,
       generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
     });
 
