@@ -115,7 +115,10 @@ export default function App() {
     const a = document.createElement('a');
     a.href = img.outputDataUrl;
     a.download = `output_${nameWithoutExt}.${ext}`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
   }
 
   async function handleDownloadAll() {
@@ -133,7 +136,10 @@ export default function App() {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'batch_output.zip';
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 
