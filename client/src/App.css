@@ -62,8 +62,8 @@ body {
 .btn--secondary:not(:disabled):hover { background: #30363d; }
 .btn--small { flex: 1; padding: 5px 8px; font-size: 12px; background: #21262d; border: 1px solid #30363d; color: #e6edf3; }
 .btn--small:not(:disabled):hover { background: #30363d; }
-.btn--small.btn--danger { color: #f85149; }
-.btn--small.btn--danger:not(:disabled):hover { background: #3d1a1a; border-color: #f85149; }
+.btn--cancel { background: #3d1a1a; border: 1px solid #da3633; color: #f85149; }
+.btn--cancel:hover { background: #4d2020; }
 
 /* Upload zone */
 .upload-zone {
@@ -106,13 +106,28 @@ body {
 .image-card--done { border-color: #238636; }
 .image-card--error { border-color: #da3633; }
 
+.image-card__header { display: flex; align-items: center; gap: 6px; }
 .image-card__filename {
+  flex: 1;
   font-size: 11px;
   color: #8b949e;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.image-card__delete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: #6e7681;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 3px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.image-card__delete:hover:not(:disabled) { color: #f85149; background: #3d1a1a; }
+.image-card__delete:disabled { opacity: 0.25; cursor: not-allowed; }
 
 .image-card__images { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 

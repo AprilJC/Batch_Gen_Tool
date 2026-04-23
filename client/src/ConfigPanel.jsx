@@ -5,7 +5,7 @@ const MODELS = [
 
 export default function ConfigPanel({
   prompt, model, images, isGenerating,
-  onPromptChange, onModelChange, onGenerateAll, onDownloadAll,
+  onPromptChange, onModelChange, onGenerateAll, onDownloadAll, onCancel,
 }) {
   const hasDone = images.some((img) => img.status === 'done');
   const canGenerate = !!prompt && images.length > 0 && !isGenerating;
@@ -35,13 +35,19 @@ export default function ConfigPanel({
         />
       </div>
       <div className="config-actions">
-        <button
-          className="btn btn--primary"
-          onClick={onGenerateAll}
-          disabled={!canGenerate}
-        >
-          ⚡ Generate All
-        </button>
+        {isGenerating ? (
+          <button className="btn btn--cancel" onClick={onCancel}>
+            ⬛ Cancel
+          </button>
+        ) : (
+          <button
+            className="btn btn--primary"
+            onClick={onGenerateAll}
+            disabled={!canGenerate}
+          >
+            ⚡ Generate All
+          </button>
+        )}
         <button
           className="btn btn--secondary"
           onClick={onDownloadAll}

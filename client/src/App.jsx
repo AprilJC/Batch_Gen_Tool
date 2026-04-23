@@ -28,6 +28,7 @@ export default function App() {
   const [lightboxImage, setLightboxImage] = useState(null);
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
+  const cancelRef = useRef(false);
 
   async function handleFilesSelect(e) {
     const files = Array.from(e.target.files);
@@ -60,10 +61,19 @@ export default function App() {
     setImages((prev) => [...prev, ...newImages]);
   }
 
+  function handleCancel() {
+    cancelRef.current = true;
+    setImages((prev) =>
+      prev.map((img) => (img.status === 'generating' ? { ...img, status: 'idle' } : img))
+    );
+  }
+
   async function handleGenerateAll() {
+    cancelRef.current = false;
     setIsGenerating(true);
     const toProcess = images;
     for (const img of toProcess) {
+      if (cancelRef.current) break;
       setImages((prev) =>
         prev.map((i) => (i.id === img.id ? { ...i, status: 'generating', error: null } : i))
       );
@@ -171,6 +181,7 @@ export default function App() {
           onModelChange={setModel}
           onGenerateAll={handleGenerateAll}
           onDownloadAll={handleDownloadAll}
+          onCancel={handleCancel}
         />
 
         <div

@@ -10,7 +10,15 @@ export default function ImageCard({
 
   return (
     <div className={cardClass}>
-      <div className="image-card__filename">{filename}</div>
+      <div className="image-card__header">
+        <div className="image-card__filename">{filename}</div>
+        <button
+          className="image-card__delete"
+          onClick={onDelete}
+          disabled={deleteDisabled}
+          title="Remove"
+        >×</button>
+      </div>
 
       <div className="image-card__images">
         <div className="image-card__slot">
@@ -61,13 +69,6 @@ export default function ImageCard({
           disabled={downloadDisabled}
         >
           ⬇ Download
-        </button>
-        <button
-          className="btn btn--small btn--danger"
-          onClick={onDelete}
-          disabled={deleteDisabled}
-        >
-          ✕ Remove
         </button>
       </div>
     </div>
