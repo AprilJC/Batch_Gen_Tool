@@ -1,11 +1,12 @@
 export default function ImageCard({
   filename, inputDataUrl, status, outputDataUrl, error,
-  isGenerating, onRegenerate, onDownload, onExpand,
+  isGenerating, onRegenerate, onDownload, onExpand, onDelete,
 }) {
   const cardClass = `image-card image-card--${status}`;
   const regenDisabled = isGenerating || status === 'generating';
   const downloadDisabled = status !== 'done';
   const canExpand = status === 'done' && !!onExpand;
+  const deleteDisabled = isGenerating || status === 'generating';
 
   return (
     <div className={cardClass}>
@@ -60,6 +61,13 @@ export default function ImageCard({
           disabled={downloadDisabled}
         >
           ⬇ Download
+        </button>
+        <button
+          className="btn btn--small btn--danger"
+          onClick={onDelete}
+          disabled={deleteDisabled}
+        >
+          ✕ Remove
         </button>
       </div>
     </div>

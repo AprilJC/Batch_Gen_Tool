@@ -115,6 +115,10 @@ export default function App() {
     }
   }
 
+  function handleDelete(id) {
+    setImages((prev) => prev.filter((i) => i.id !== id));
+  }
+
   function handleDownloadOne(id) {
     const img = images.find((i) => i.id === id);
     if (!img || !img.outputDataUrl) return;
@@ -214,6 +218,7 @@ export default function App() {
           isGenerating={isGenerating}
           onRegenerate={handleRegenerate}
           onDownload={handleDownloadOne}
+          onDelete={handleDelete}
           onExpand={(img) => setLightboxImage(img)}
         />
 

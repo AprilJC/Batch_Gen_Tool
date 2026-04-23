@@ -62,6 +62,8 @@ body {
 .btn--secondary:not(:disabled):hover { background: #30363d; }
 .btn--small { flex: 1; padding: 5px 8px; font-size: 12px; background: #21262d; border: 1px solid #30363d; color: #e6edf3; }
 .btn--small:not(:disabled):hover { background: #30363d; }
+.btn--small.btn--danger { color: #f85149; }
+.btn--small.btn--danger:not(:disabled):hover { background: #3d1a1a; border-color: #f85149; }
 
 /* Upload zone */
 .upload-zone {
