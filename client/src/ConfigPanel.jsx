@@ -1,27 +1,17 @@
 const MODELS = [
   { id: 'gemini-3.1-flash-image-preview', label: 'nanobana2' },
-  { id: 'gemini-3-pro-image-preview',     label: 'nanobanana pro' },
+  { id: 'gemini-3-pro-image-preview',   label: 'nanobanana pro' },
 ];
 
 export default function ConfigPanel({
-  apiKey, prompt, model, images, isGenerating,
-  onApiKeyChange, onPromptChange, onModelChange, onGenerateAll, onDownloadAll,
+  prompt, model, images, isGenerating,
+  onPromptChange, onModelChange, onGenerateAll, onDownloadAll,
 }) {
   const hasDone = images.some((img) => img.status === 'done');
-  const canGenerate = !!apiKey && !!prompt && images.length > 0 && !isGenerating;
+  const canGenerate = !!prompt && images.length > 0 && !isGenerating;
 
   return (
     <div className="config-panel">
-      <div className="config-field">
-        <label className="config-label">GOOGLE API KEY</label>
-        <input
-          type="password"
-          className="config-input"
-          placeholder="API Key"
-          value={apiKey}
-          onChange={(e) => onApiKeyChange(e.target.value)}
-        />
-      </div>
       <div className="config-field">
         <label className="config-label">MODEL</label>
         <select

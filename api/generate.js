@@ -1,17 +1,13 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-
 const ALLOWED_MODELS = {
   'gemini-3.1-flash-image-preview': true,
   'gemini-3-pro-image-preview': true,
 };
 
-app.post('/api/generate', async (req, res) => {
+module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
   const { image, mimeType, prompt, model: modelId } = req.body;
   if (!image || !mimeType || !prompt) {
     return res.status(400).json({ error: 'image, mimeType, and prompt are required' });
@@ -49,6 +45,7 @@ app.post('/api/generate', async (req, res) => {
     } catch {
       return res.status(500).json({ error: `Upstream error (${response.status}): ${responseText.slice(0, 300)}` });
     }
+
     if (!response.ok) {
       return res.status(response.status).json({ error: data.error?.message || 'Generation failed' });
     }
@@ -60,7 +57,6 @@ app.post('/api/generate', async (req, res) => {
       const imgPart = content.find((p) => p.type === 'image_url');
       imageUrl = imgPart?.image_url?.url;
     } else if (typeof content === 'string') {
-      // Markdown format: ![image](data:image/png;base64,...)
       const mdMatch = content.match(/!\[.*?\]\((data:image\/[^)]+)\)/);
       if (mdMatch) {
         imageUrl = mdMatch[1];
@@ -78,11 +74,4 @@ app.post('/api/generate', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message || 'Generation failed' });
   }
-});
-
-const PORT = process.env.PORT || 3001;
-if (require.main === module) {
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-}
-
-module.exports = app;
+};

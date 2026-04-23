@@ -1,46 +1,40 @@
 const request = require('supertest');
 
-jest.mock('@google/generative-ai');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+global.fetch = jest.fn();
 
 const app = require('./index');
 
-describe('POST /api/generate', () => {
-  it('returns 400 when x-api-key header is missing', async () => {
-    const res = await request(app)
-      .post('/api/generate')
-      .send({ image: 'data:image/jpeg;base64,abc', mimeType: 'image/jpeg', prompt: 'test' });
-    expect(res.status).toBe(400);
-    expect(res.body.error).toBe('API key required');
-  });
+beforeEach(() => {
+  fetch.mockClear();
+  process.env.NEWAPI_KEY = 'test-key';
+  process.env.NEWAPI_URL = 'https://test.example.com/v1';
+});
 
+describe('POST /api/generate', () => {
   it('returns 400 when required fields are missing', async () => {
     const res = await request(app)
       .post('/api/generate')
-      .set('x-api-key', 'key')
       .send({ prompt: 'test' });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('image, mimeType, and prompt are required');
   });
 
   it('returns generated image on success', async () => {
-    GoogleGenerativeAI.mockImplementation(() => ({
-      getGenerativeModel: () => ({
-        generateContent: async () => ({
-          response: {
-            candidates: [{
-              content: {
-                parts: [{ inlineData: { mimeType: 'image/png', data: 'base64output' } }],
-              },
-            }],
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [{
+          message: {
+            content: [
+              { type: 'image_url', image_url: { url: 'data:image/png;base64,base64output' } },
+            ],
           },
-        }),
+        }],
       }),
-    }));
+    });
 
     const res = await request(app)
       .post('/api/generate')
-      .set('x-api-key', 'test-key')
       .send({ image: 'data:image/jpeg;base64,inputdata', mimeType: 'image/jpeg', prompt: 'watercolor' });
 
     expect(res.status).toBe(200);
@@ -48,43 +42,54 @@ describe('POST /api/generate', () => {
     expect(res.body.mimeType).toBe('image/png');
   });
 
-  it('returns 500 when Gemini returns no image part', async () => {
-    GoogleGenerativeAI.mockImplementation(() => ({
-      getGenerativeModel: () => ({
-        generateContent: async () => ({
-          response: {
-            candidates: [{ content: { parts: [{ text: 'no image here' }] } }],
-          },
-        }),
+  it('returns 500 when response contains no image', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: [{ type: 'text', text: 'no image here' }] } }],
       }),
-    }));
+    });
 
     const res = await request(app)
       .post('/api/generate')
-      .set('x-api-key', 'key')
       .send({ image: 'data:image/jpeg;base64,abc', mimeType: 'image/jpeg', prompt: 'test' });
 
     expect(res.status).toBe(500);
-    expect(res.body.error).toBe('No image in Gemini response');
+    expect(res.body.error).toBe('No image in response');
   });
 
-  it('forwards Gemini API errors', async () => {
-    GoogleGenerativeAI.mockImplementation(() => ({
-      getGenerativeModel: () => ({
-        generateContent: async () => {
-          const err = new Error('Invalid API key');
-          err.status = 401;
-          throw err;
-        },
-      }),
-    }));
+  it('forwards API errors', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: { message: 'Invalid API key' } }),
+    });
 
     const res = await request(app)
       .post('/api/generate')
-      .set('x-api-key', 'bad-key')
       .send({ image: 'data:image/jpeg;base64,abc', mimeType: 'image/jpeg', prompt: 'test' });
 
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('Invalid API key');
+  });
+
+  it('defaults to gemini-3.1-flash-image-preview for unknown models', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [{
+          message: {
+            content: [{ type: 'image_url', image_url: { url: 'data:image/png;base64,out' } }],
+          },
+        }],
+      }),
+    });
+
+    await request(app)
+      .post('/api/generate')
+      .send({ image: 'data:image/jpeg;base64,abc', mimeType: 'image/jpeg', prompt: 'test', model: 'unknown-model' });
+
+    const body = JSON.parse(fetch.mock.calls[0][1].body);
+    expect(body.model).toBe('gemini-3.1-flash-image-preview');
   });
 });

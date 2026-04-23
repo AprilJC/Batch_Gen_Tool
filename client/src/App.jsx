@@ -19,7 +19,6 @@ function readFileAsDataURL(file) {
 }
 
 export default function App() {
-  const [apiKey, setApiKey] = useState('');
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState('gemini-3.1-flash-image-preview');
   const [images, setImages] = useState([]);
@@ -36,23 +35,16 @@ export default function App() {
       (f) => ACCEPTED_TYPES.includes(f.type) && f.size <= MAX_FILE_SIZE
     );
     const oversized = files.filter((f) => f.size > MAX_FILE_SIZE);
-    const truncated = valid.slice(0, MAX_IMAGES);
 
-    // Save current batch to history if it has completed images
-    const doneCurrent = images.filter((img) => img.status === 'done');
-    if (doneCurrent.length > 0) {
-      setHistory((prev) => [{
-        id: crypto.randomUUID(),
-        prompt,
-        timestamp: new Date().toLocaleTimeString(),
-        images: doneCurrent,
-      }, ...prev]);
-    }
+    const remaining = MAX_IMAGES - images.length;
+    const truncated = valid.slice(0, remaining);
 
     const warnings = [];
     if (oversized.length > 0) warnings.push(`${oversized.length} file(s) over 10MB skipped`);
-    if (valid.length > MAX_IMAGES) warnings.push(`Only first ${MAX_IMAGES} images loaded`);
+    if (valid.length > remaining) warnings.push(`Only ${remaining} more image(s) can be added (max ${MAX_IMAGES})`);
     setUploadWarning(warnings.join('. '));
+
+    if (truncated.length === 0) return;
 
     const newImages = await Promise.all(
       truncated.map(async (file) => ({
@@ -65,12 +57,12 @@ export default function App() {
         error: null,
       }))
     );
-    setImages(newImages);
+    setImages((prev) => [...prev, ...newImages]);
   }
 
   async function handleGenerateAll() {
     setIsGenerating(true);
-    const toProcess = images.filter((img) => img.status !== 'done');
+    const toProcess = images;
     for (const img of toProcess) {
       setImages((prev) =>
         prev.map((i) => (i.id === img.id ? { ...i, status: 'generating', error: null } : i))
@@ -80,7 +72,6 @@ export default function App() {
           image: img.inputDataUrl,
           mimeType: img.mimeType,
           prompt,
-          apiKey,
           model,
         });
         setImages((prev) =>
@@ -110,7 +101,6 @@ export default function App() {
         image: img.inputDataUrl,
         mimeType: img.mimeType,
         prompt,
-        apiKey,
         model,
       });
       setImages((prev) =>
@@ -169,12 +159,10 @@ export default function App() {
 
       <main className="app-main">
         <ConfigPanel
-          apiKey={apiKey}
           prompt={prompt}
           model={model}
           images={images}
           isGenerating={isGenerating}
-          onApiKeyChange={setApiKey}
           onPromptChange={setPrompt}
           onModelChange={setModel}
           onGenerateAll={handleGenerateAll}
