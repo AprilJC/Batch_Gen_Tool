@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { image, mimeType, prompt, model: modelId } = req.body;
+  const { image, mimeType, image2, mimeType2, prompt, model: modelId } = req.body;
   if (!image || !mimeType || !prompt) {
     return res.status(400).json({ error: 'image, mimeType, and prompt are required' });
   }
@@ -32,6 +32,7 @@ module.exports = async function handler(req, res) {
           content: [
             { type: 'text', text: prompt },
             { type: 'image_url', image_url: { url: image } },
+            ...(image2 ? [{ type: 'image_url', image_url: { url: image2 } }] : []),
           ],
         }],
         modalities: ['image', 'text'],

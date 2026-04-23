@@ -4,8 +4,8 @@ const MODELS = [
 ];
 
 export default function ConfigPanel({
-  prompt, model, images, isGenerating,
-  onPromptChange, onModelChange, onGenerateAll, onDownloadAll, onCancel,
+  prompt, model, inputMode, images, isGenerating,
+  onPromptChange, onModelChange, onInputModeChange, onGenerateAll, onDownloadAll, onCancel,
 }) {
   const hasDone = images.some((img) => img.status === 'done');
   const canGenerate = !!prompt && images.length > 0 && !isGenerating;
@@ -23,6 +23,21 @@ export default function ConfigPanel({
             <option key={m.id} value={m.id}>{m.label}</option>
           ))}
         </select>
+      </div>
+      <div className="config-field">
+        <label className="config-label">INPUT MODE</label>
+        <div className="mode-toggle">
+          <button
+            className={`mode-btn${inputMode === 1 ? ' mode-btn--active' : ''}`}
+            onClick={() => onInputModeChange(1)}
+            disabled={isGenerating}
+          >1 image</button>
+          <button
+            className={`mode-btn${inputMode === 2 ? ' mode-btn--active' : ''}`}
+            onClick={() => onInputModeChange(2)}
+            disabled={isGenerating}
+          >2 images</button>
+        </div>
       </div>
       <div className="config-field config-field--grow">
         <label className="config-label">PROMPT</label>

@@ -10,6 +10,7 @@ export default function ImageGrid({ images, isGenerating, onRegenerate, onDownlo
           key={img.id}
           filename={img.filename}
           inputDataUrl={img.inputDataUrl}
+          input2DataUrl={img.input2DataUrl}
           status={img.status}
           outputDataUrl={img.outputDataUrl}
           error={img.error}

@@ -41,6 +41,11 @@ body {
 }
 .config-input:focus { border-color: #58a6ff; }
 .config-select { cursor: pointer; min-width: 0; }
+.mode-toggle { display: flex; border: 1px solid #30363d; border-radius: 4px; overflow: hidden; }
+.mode-btn { flex: 1; padding: 6px 10px; font-size: 12px; font-weight: 500; background: #0d1117; border: none; color: #8b949e; cursor: pointer; transition: background 0.15s, color 0.15s; white-space: nowrap; }
+.mode-btn:hover { background: #21262d; color: #e6edf3; }
+.mode-btn--active { background: #21262d; color: #e6edf3; }
+.mode-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .config-textarea { resize: vertical; min-height: 110px; font-family: inherit; }
 .config-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
@@ -132,6 +137,7 @@ body {
 .image-card__images { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .image-card__slot { display: flex; flex-direction: column; gap: 4px; }
+.image-card__slot--dual .image-card__img { aspect-ratio: 4/3; }
 .image-card__slot-label { font-size: 9px; font-weight: 600; letter-spacing: 0.05em; color: #8b949e; }
 .image-card__slot-label--generating { color: #58a6ff; }
 .image-card__slot-label--done { color: #3fb950; }

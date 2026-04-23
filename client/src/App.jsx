@@ -21,6 +21,7 @@ function readFileAsDataURL(file) {
 export default function App() {
   const [prompt, setPrompt] = useState('');
   const [model, setModel] = useState('gemini-3.1-flash-image-preview');
+  const [inputMode, setInputMode] = useState(1);
   const [images, setImages] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadWarning, setUploadWarning] = useState('');
@@ -38,26 +39,54 @@ export default function App() {
     const oversized = files.filter((f) => f.size > MAX_FILE_SIZE);
 
     const remaining = MAX_IMAGES - images.length;
-    const truncated = valid.slice(0, remaining);
+    const fileLimit = inputMode === 2 ? remaining * 2 : remaining;
+    const truncated = valid.slice(0, fileLimit);
 
     const warnings = [];
     if (oversized.length > 0) warnings.push(`${oversized.length} file(s) over 10MB skipped`);
-    if (valid.length > remaining) warnings.push(`Only ${remaining} more image(s) can be added (max ${MAX_IMAGES})`);
+    if (valid.length > fileLimit) warnings.push(
+      inputMode === 2
+        ? `Only ${remaining} more group(s) can be added (max ${MAX_IMAGES})`
+        : `Only ${remaining} more image(s) can be added (max ${MAX_IMAGES})`
+    );
     setUploadWarning(warnings.join('. '));
 
     if (truncated.length === 0) return;
 
-    const newImages = await Promise.all(
-      truncated.map(async (file) => ({
-        id: crypto.randomUUID(),
-        filename: file.name,
-        inputDataUrl: await readFileAsDataURL(file),
-        mimeType: file.type,
-        status: 'idle',
-        outputDataUrl: null,
-        error: null,
-      }))
-    );
+    let newImages;
+    if (inputMode === 2) {
+      const pairs = [];
+      for (let i = 0; i < truncated.length; i += 2) {
+        pairs.push([truncated[i], truncated[i + 1] || null]);
+      }
+      newImages = await Promise.all(
+        pairs.map(async ([f1, f2]) => ({
+          id: crypto.randomUUID(),
+          filename: f2 ? `${f1.name} + ${f2.name}` : f1.name,
+          inputDataUrl: await readFileAsDataURL(f1),
+          mimeType: f1.type,
+          input2DataUrl: f2 ? await readFileAsDataURL(f2) : null,
+          mimeType2: f2 ? f2.type : null,
+          status: 'idle',
+          outputDataUrl: null,
+          error: null,
+        }))
+      );
+    } else {
+      newImages = await Promise.all(
+        truncated.map(async (file) => ({
+          id: crypto.randomUUID(),
+          filename: file.name,
+          inputDataUrl: await readFileAsDataURL(file),
+          mimeType: file.type,
+          input2DataUrl: null,
+          mimeType2: null,
+          status: 'idle',
+          outputDataUrl: null,
+          error: null,
+        }))
+      );
+    }
     setImages((prev) => [...prev, ...newImages]);
   }
 
@@ -81,6 +110,8 @@ export default function App() {
         const result = await generateImage({
           image: img.inputDataUrl,
           mimeType: img.mimeType,
+          image2: img.input2DataUrl,
+          mimeType2: img.mimeType2,
           prompt,
           model,
         });
@@ -110,6 +141,8 @@ export default function App() {
       const result = await generateImage({
         image: img.inputDataUrl,
         mimeType: img.mimeType,
+        image2: img.input2DataUrl,
+        mimeType2: img.mimeType2,
         prompt,
         model,
       });
@@ -179,6 +212,8 @@ export default function App() {
           isGenerating={isGenerating}
           onPromptChange={setPrompt}
           onModelChange={setModel}
+          inputMode={inputMode}
+          onInputModeChange={setInputMode}
           onGenerateAll={handleGenerateAll}
           onDownloadAll={handleDownloadAll}
           onCancel={handleCancel}

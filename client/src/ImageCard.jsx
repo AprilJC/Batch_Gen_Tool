@@ -1,5 +1,5 @@
 export default function ImageCard({
-  filename, inputDataUrl, status, outputDataUrl, error,
+  filename, inputDataUrl, mimeType, input2DataUrl, status, outputDataUrl, error,
   isGenerating, onRegenerate, onDownload, onExpand, onDelete,
 }) {
   const cardClass = `image-card image-card--${status}`;
@@ -7,6 +7,7 @@ export default function ImageCard({
   const downloadDisabled = status !== 'done';
   const canExpand = status === 'done' && !!onExpand;
   const deleteDisabled = isGenerating || status === 'generating';
+  const dual = !!input2DataUrl;
 
   return (
     <div className={cardClass}>
@@ -21,14 +22,20 @@ export default function ImageCard({
       </div>
 
       <div className="image-card__images">
-        <div className="image-card__slot">
-          <div className="image-card__slot-label">INPUT</div>
+        <div className={`image-card__slot${dual ? ' image-card__slot--dual' : ''}`}>
+          <div className="image-card__slot-label">INPUT{dual ? ' 1+2' : ''}</div>
           <img
             src={inputDataUrl}
             alt={`Input: ${filename}`}
-            className={`image-card__img${canExpand ? ' image-card__img--clickable' : ''}`}
-            onClick={canExpand ? onExpand : undefined}
+            className="image-card__img"
           />
+          {dual && (
+            <img
+              src={input2DataUrl}
+              alt={`Input 2: ${filename}`}
+              className="image-card__img"
+            />
+          )}
         </div>
 
         <div className="image-card__slot">
