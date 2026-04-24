@@ -1,5 +1,5 @@
 {
-  "name": "batch-image-client",
+  "name": "@batch-gen/client",
   "private": true,
   "scripts": {
     "dev": "vite",

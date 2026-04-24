@@ -2,3 +2,9 @@ node_modules/
 dist/
 .env
 .superpowers/
+packages/*/node_modules/
+packages/*/dist/
+.vercel/
+*.tsbuildinfo
+coverage/
+.pnpm-store/
