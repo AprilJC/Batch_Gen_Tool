@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { generateImage } from './api';
 import ConfigPanel from './ConfigPanel';
 import ImageGrid from './ImageGrid';
@@ -31,35 +31,50 @@ export default function App() {
   const folderInputRef = useRef(null);
   const cancelRef = useRef(false);
 
-  async function handleFilesSelect(e) {
-    const files = Array.from(e.target.files);
+  const processFiles = useCallback(async (fileList) => {
+    if (isGenerating) return;
+
+    const files = Array.from(fileList);
     const valid = files.filter(
       (f) => ACCEPTED_TYPES.includes(f.type) && f.size <= MAX_FILE_SIZE
     );
     const oversized = files.filter((f) => f.size > MAX_FILE_SIZE);
 
-    const remaining = MAX_IMAGES - images.length;
-    const fileLimit = inputMode === 2 ? remaining * 2 : remaining;
-    const truncated = valid.slice(0, fileLimit);
-
     const warnings = [];
     if (oversized.length > 0) warnings.push(`${oversized.length} file(s) over 10MB skipped`);
-    if (valid.length > fileLimit) warnings.push(
-      inputMode === 2
-        ? `Only ${remaining} more group(s) can be added (max ${MAX_IMAGES})`
-        : `Only ${remaining} more image(s) can be added (max ${MAX_IMAGES})`
-    );
-    setUploadWarning(warnings.join('. '));
 
-    if (truncated.length === 0) return;
-
-    let newImages;
     if (inputMode === 2) {
-      const pairs = [];
-      for (let i = 0; i < truncated.length; i += 2) {
-        pairs.push([truncated[i], truncated[i + 1] || null]);
+      const lastItem = images[images.length - 1];
+      const lastIsUnpaired = lastItem && !lastItem.input2DataUrl && lastItem.status === 'idle';
+      const slotsAvailable = MAX_IMAGES - images.length;
+      // 1 file to fill the last unpaired slot (if any) + slotsAvailable * 2 for new pairs
+      const fileLimit = lastIsUnpaired ? 1 + slotsAvailable * 2 : slotsAvailable * 2;
+      const truncated = valid.slice(0, fileLimit);
+
+      if (valid.length > fileLimit) warnings.push(`Only ${slotsAvailable} more group(s) can be added (max ${MAX_IMAGES})`);
+      setUploadWarning(warnings.join('. '));
+      if (truncated.length === 0) return;
+
+      let filesToPair = [...truncated];
+      let updatedLast = null;
+
+      if (lastIsUnpaired && filesToPair.length > 0) {
+        const fillFile = filesToPair.shift();
+        const dataUrl = await readFileAsDataURL(fillFile);
+        updatedLast = {
+          ...lastItem,
+          filename: `${lastItem.filename} + ${fillFile.name}`,
+          input2DataUrl: dataUrl,
+          mimeType2: fillFile.type,
+        };
       }
-      newImages = await Promise.all(
+
+      const pairs = [];
+      for (let i = 0; i < filesToPair.length; i += 2) {
+        pairs.push([filesToPair[i], filesToPair[i + 1] || null]);
+      }
+
+      const newItems = await Promise.all(
         pairs.map(async ([f1, f2]) => ({
           id: crypto.randomUUID(),
           filename: f2 ? `${f1.name} + ${f2.name}` : f1.name,
@@ -72,8 +87,21 @@ export default function App() {
           error: null,
         }))
       );
+
+      setImages((prev) => {
+        const updated = updatedLast
+          ? prev.map((img) => (img.id === updatedLast.id ? updatedLast : img))
+          : [...prev];
+        return [...updated, ...newItems];
+      });
     } else {
-      newImages = await Promise.all(
+      const remaining = MAX_IMAGES - images.length;
+      const truncated = valid.slice(0, remaining);
+      if (valid.length > remaining) warnings.push(`Only ${remaining} more image(s) can be added (max ${MAX_IMAGES})`);
+      setUploadWarning(warnings.join('. '));
+      if (truncated.length === 0) return;
+
+      const newImages = await Promise.all(
         truncated.map(async (file) => ({
           id: crypto.randomUUID(),
           filename: file.name,
@@ -86,12 +114,32 @@ export default function App() {
           error: null,
         }))
       );
+      setImages((prev) => [...prev, ...newImages]);
     }
-    setImages((prev) => [...prev, ...newImages]);
+  }, [images, inputMode, isGenerating]);
+
+  // Paste support
+  useEffect(() => {
+    const handlePaste = async (e) => {
+      if (!e.clipboardData) return;
+      const items = Array.from(e.clipboardData.items);
+      const imageFiles = items
+        .filter((item) => ACCEPTED_TYPES.includes(item.type))
+        .map((item) => item.getAsFile())
+        .filter(Boolean);
+      if (imageFiles.length > 0) await processFiles(imageFiles);
+    };
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [processFiles]);
+
+  function handleFilesSelect(e) {
+    processFiles(e.target.files);
   }
 
   function handleCancel() {
     cancelRef.current = true;
+    setIsGenerating(false);
     setImages((prev) =>
       prev.map((img) => (img.status === 'generating' ? { ...img, status: 'idle' } : img))
     );
@@ -115,12 +163,14 @@ export default function App() {
           prompt,
           model,
         });
+        if (cancelRef.current) break;
         setImages((prev) =>
           prev.map((i) =>
             i.id === img.id ? { ...i, status: 'done', outputDataUrl: result.image } : i
           )
         );
       } catch (err) {
+        if (cancelRef.current) break;
         setImages((prev) =>
           prev.map((i) =>
             i.id === img.id ? { ...i, status: 'error', error: err.message } : i
@@ -224,7 +274,7 @@ export default function App() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
-            handleFilesSelect({ target: { files: e.dataTransfer.files } });
+            processFiles(e.dataTransfer.files);
           }}
         >
           <input
@@ -253,7 +303,7 @@ export default function App() {
             </button>
           </div>
           <span className="upload-zone__hint">
-            or drag and drop here
+            or drag, drop, or paste here
             {images.length > 0 && ` · ${images.length}/${MAX_IMAGES} loaded`}
           </span>
           {uploadWarning && <div className="upload-zone__warning">{uploadWarning}</div>}

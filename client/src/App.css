@@ -231,6 +231,7 @@ body {
 .lightbox-close { background: none; border: none; color: #8b949e; font-size: 16px; cursor: pointer; padding: 4px 8px; border-radius: 4px; line-height: 1; }
 .lightbox-close:hover { background: #30363d; color: #e6edf3; }
 .lightbox-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; overflow: auto; }
+.lightbox-body--triple { grid-template-columns: 1fr 1fr 1fr; }
 .lightbox-slot { display: flex; flex-direction: column; gap: 6px; }
 .lightbox-label { font-size: 10px; font-weight: 600; color: #8b949e; letter-spacing: 0.05em; }
 .lightbox-label--done { color: #3fb950; }

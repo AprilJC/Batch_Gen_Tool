@@ -9,6 +9,8 @@ export default function Lightbox({ image, onClose }) {
 
   if (!image) return null;
 
+  const dual = !!image.input2DataUrl;
+
   return (
     <div className="lightbox-overlay" onClick={onClose}>
       <div className="lightbox" onClick={(e) => e.stopPropagation()}>
@@ -16,11 +18,17 @@ export default function Lightbox({ image, onClose }) {
           <span className="lightbox-filename">{image.filename}</span>
           <button className="lightbox-close" onClick={onClose}>✕</button>
         </div>
-        <div className="lightbox-body">
+        <div className={`lightbox-body${dual ? ' lightbox-body--triple' : ''}`}>
           <div className="lightbox-slot">
-            <div className="lightbox-label">INPUT</div>
+            <div className="lightbox-label">INPUT{dual ? ' 1' : ''}</div>
             <img src={image.inputDataUrl} alt={`Input: ${image.filename}`} className="lightbox-img" />
           </div>
+          {dual && (
+            <div className="lightbox-slot">
+              <div className="lightbox-label">INPUT 2</div>
+              <img src={image.input2DataUrl} alt={`Input 2: ${image.filename}`} className="lightbox-img" />
+            </div>
+          )}
           <div className="lightbox-slot">
             <div className="lightbox-label lightbox-label--done">OUTPUT</div>
             <img src={image.outputDataUrl} alt={`Output: ${image.filename}`} className="lightbox-img" />
