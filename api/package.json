@@ -1,0 +1,11 @@
+{
+  "name": "@batch-gen/api",
+  "private": true,
+  "dependencies": {
+    "@batch-gen/server": "workspace:*"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.2.0",
+    "typescript": "^5.6.3"
+  }
+}

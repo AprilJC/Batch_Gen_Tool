@@ -1,0 +1,8 @@
+{
+  "extends": "../packages/server/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist"
+  },
+  "include": ["generate.ts"]
+}

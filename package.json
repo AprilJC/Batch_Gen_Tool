@@ -1,10 +1,18 @@
 {
   "name": "batch-image-tool",
   "private": true,
+  "packageManager": "pnpm@10.30.3",
   "scripts": {
-    "dev": "concurrently \"npm --prefix server start\" \"npm --prefix client run dev\""
+    "dev": "pnpm -r --parallel run dev",
+    "build": "pnpm --filter @batch-gen/client run build",
+    "test": "pnpm -r run test",
+    "typecheck": "pnpm -r run typecheck",
+    "clean": "rm -rf packages/*/node_modules packages/*/dist api/node_modules api/dist node_modules .vercel"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

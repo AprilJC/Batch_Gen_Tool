@@ -1,8 +1,19 @@
 import { useEffect } from 'react';
+import type { ImageItem, HistoryBatch } from './types';
 
-export default function Lightbox({ image, onClose }) {
+type LightboxImage =
+  | ImageItem
+  | HistoryBatch['images'][number]
+  | null;
+
+interface Props {
+  image: LightboxImage;
+  onClose: () => void;
+}
+
+export default function Lightbox({ image, onClose }: Props) {
   useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [onClose]);
@@ -23,7 +34,7 @@ export default function Lightbox({ image, onClose }) {
             <div className="lightbox-label">INPUT{dual ? ' 1' : ''}</div>
             <img src={image.inputDataUrl} alt={`Input: ${image.filename}`} className="lightbox-img" />
           </div>
-          {dual && (
+          {dual && image.input2DataUrl && (
             <div className="lightbox-slot">
               <div className="lightbox-label">INPUT 2</div>
               <img src={image.input2DataUrl} alt={`Input 2: ${image.filename}`} className="lightbox-img" />
@@ -31,7 +42,9 @@ export default function Lightbox({ image, onClose }) {
           )}
           <div className="lightbox-slot">
             <div className="lightbox-label lightbox-label--done">OUTPUT</div>
-            <img src={image.outputDataUrl} alt={`Output: ${image.filename}`} className="lightbox-img" />
+            {image.outputDataUrl && (
+              <img src={image.outputDataUrl} alt={`Output: ${image.filename}`} className="lightbox-img" />
+            )}
           </div>
         </div>
       </div>

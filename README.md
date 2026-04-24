@@ -39,21 +39,16 @@ cd 把文件夹拖进来这里会自动填入路径
 **Windows 用户：**
 > 打开文件夹，在地址栏输入 `cmd` 回车，会自动在当前目录打开命令提示符。
 
-进入文件夹后，依次输入以下三条命令，每条输完按一次回车，**等它跑完再输下一条**（会看到一些文字滚动，属于正常现象）：
+进入文件夹后，依次执行：
 
 ```
-npm install
+corepack enable
+pnpm install
 ```
 
-```
-npm install --prefix server
-```
+（`corepack enable` 让系统启用 pnpm；如果系统提示权限，`sudo corepack enable`）
 
-```
-npm install --prefix client
-```
-
-三条都跑完后，依赖就装好了。
+依赖装好后，复制 `packages/server/.env.example` 为 `packages/server/.env` 并填入你的密钥。
 
 ---
 
@@ -62,7 +57,7 @@ npm install --prefix client
 每次使用前，在工具文件夹的终端里输入：
 
 ```
-npm run dev
+pnpm run dev
 ```
 
 看到类似下面的提示，说明启动成功：
@@ -87,11 +82,21 @@ http://localhost:5173
 
 ## 怎么用
 
-1. **选择模型**：下拉菜单选 `nanobana2`（速度快）或 `nanobanana pro`（效果好）
+1. **选择模型**：下拉菜单有 4 个选项（见下方说明）
 2. **写提示词**：在 PROMPT 框里描述你想要的效果，例如："将图片转为水彩画风格"
 3. **上传图片**：点击「Select Images」选择单张或多张图片，或点「Select Folder」上传整个文件夹（最多 10 张，每张不超过 10MB）
 4. **开始生成**：点击「⚡ Generate All」按钮
 5. **下载结果**：生成完成后点「⬇ Download All」下载全部，或点单张图片上的按钮单独下载
+
+---
+
+## 模型选项
+
+下拉菜单中的 4 个模型：
+- **nanobanana 2 (vertex)** / **nanobanana pro (vertex)**: 走内部 NewAPI 代理（原有通路）。
+- **nanobanana 2 (zhipu)** / **nanobanana pro (zhipu)**: 直连智谱 z.ai 官方 API（需单独配置 `ZHIPU_API_KEY`）。
+
+ratio 与 quality 可在 Zhipu 模型下自由调节；NewAPI 也会透传给上游。Pro 模型只支持 10 种比例（不含 1:4/4:1/1:8/8:1）。
 
 ---
 
@@ -104,7 +109,7 @@ http://localhost:5173
 ## 常见问题
 
 **页面打不开？**
-确认终端里的 `npm run dev` 仍在运行，没有被关掉。
+确认终端里的 `pnpm run dev` 仍在运行，没有被关掉。
 
 **生成失败？**
 检查网络连接是否正常，提示词不能为空。

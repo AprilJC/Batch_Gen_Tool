@@ -1,37 +1,53 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import type { ChangeEvent } from 'react';
 import { generateImage } from './api';
-import ConfigPanel from './ConfigPanel';
+import ConfigPanel, { type InputMode } from './ConfigPanel';
 import ImageGrid from './ImageGrid';
 import Lightbox from './Lightbox';
 import JSZip from 'jszip';
+import type { HistoryBatch, ImageItem, ModelId, Ratio, Quality } from './types';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_IMAGES = 10;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-function readFileAsDataURL(file) {
+function readFileAsDataURL(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target.result);
-    reader.onerror = reject;
+    reader.onload = (e) => {
+      const result = e.target?.result;
+      if (typeof result === 'string') resolve(result);
+      else reject(new Error('FileReader did not return a string'));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('FileReader error'));
     reader.readAsDataURL(file);
   });
 }
 
 export default function App() {
-  const [prompt, setPrompt] = useState('');
-  const [model, setModel] = useState('gemini-3.1-flash-image-preview');
-  const [inputMode, setInputMode] = useState(1);
-  const [images, setImages] = useState([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [uploadWarning, setUploadWarning] = useState('');
-  const [history, setHistory] = useState([]);
-  const [lightboxImage, setLightboxImage] = useState(null);
-  const fileInputRef = useRef(null);
-  const folderInputRef = useRef(null);
-  const cancelRef = useRef(false);
+  const [prompt, setPrompt] = useState<string>('');
+  const [model, setModel] = useState<ModelId>('gemini-3.1-flash-image-preview');
+  const [ratio, setRatio] = useState<Ratio>('1:1');
+  const [quality, setQuality] = useState<Quality>('1K');
+  const [inputMode, setInputMode] = useState<InputMode>(1);
+  const [images, setImages] = useState<ImageItem[]>([]);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [uploadWarning, setUploadWarning] = useState<string>('');
+  const [history] = useState<HistoryBatch[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<ImageItem | HistoryBatch['images'][number] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const folderInputRef = useRef<HTMLInputElement | null>(null);
+  const cancelRef = useRef<boolean>(false);
 
-  const processFiles = useCallback(async (fileList) => {
+  const handleModelChange = useCallback((nextModel: ModelId) => {
+    setModel(nextModel);
+    const RATIOS_PRO = ['1:1','2:3','3:2','4:3','3:4','4:5','5:4','16:9','9:16','21:9'];
+    if (nextModel === 'zhipu-nanobanana-pro' && !(RATIOS_PRO as string[]).includes(ratio)) {
+      setRatio('1:1');
+    }
+  }, [ratio]);
+
+  const processFiles = useCallback(async (fileList: FileList | File[]) => {
     if (isGenerating) return;
 
     const files = Array.from(fileList);
@@ -40,12 +56,12 @@ export default function App() {
     );
     const oversized = files.filter((f) => f.size > MAX_FILE_SIZE);
 
-    const warnings = [];
+    const warnings: string[] = [];
     if (oversized.length > 0) warnings.push(`${oversized.length} file(s) over 10MB skipped`);
 
     if (inputMode === 2) {
       const lastItem = images[images.length - 1];
-      const lastIsUnpaired = lastItem && !lastItem.input2DataUrl && lastItem.status === 'idle';
+      const lastIsUnpaired = !!lastItem && !lastItem.input2DataUrl && lastItem.status === 'idle';
       const slotsAvailable = MAX_IMAGES - images.length;
       // 1 file to fill the last unpaired slot (if any) + slotsAvailable * 2 for new pairs
       const fileLimit = lastIsUnpaired ? 1 + slotsAvailable * 2 : slotsAvailable * 2;
@@ -55,27 +71,31 @@ export default function App() {
       setUploadWarning(warnings.join('. '));
       if (truncated.length === 0) return;
 
-      let filesToPair = [...truncated];
-      let updatedLast = null;
+      const filesToPair: File[] = [...truncated];
+      let updatedLast: ImageItem | null = null;
 
-      if (lastIsUnpaired && filesToPair.length > 0) {
+      if (lastIsUnpaired && lastItem && filesToPair.length > 0) {
         const fillFile = filesToPair.shift();
-        const dataUrl = await readFileAsDataURL(fillFile);
-        updatedLast = {
-          ...lastItem,
-          filename: `${lastItem.filename} + ${fillFile.name}`,
-          input2DataUrl: dataUrl,
-          mimeType2: fillFile.type,
-        };
+        if (fillFile) {
+          const dataUrl = await readFileAsDataURL(fillFile);
+          updatedLast = {
+            ...lastItem,
+            filename: `${lastItem.filename} + ${fillFile.name}`,
+            input2DataUrl: dataUrl,
+            mimeType2: fillFile.type,
+          };
+        }
       }
 
-      const pairs = [];
+      const pairs: Array<[File, File | null]> = [];
       for (let i = 0; i < filesToPair.length; i += 2) {
-        pairs.push([filesToPair[i], filesToPair[i + 1] || null]);
+        const f1 = filesToPair[i];
+        const f2 = filesToPair[i + 1] ?? null;
+        if (f1) pairs.push([f1, f2]);
       }
 
-      const newItems = await Promise.all(
-        pairs.map(async ([f1, f2]) => ({
+      const newItems: ImageItem[] = await Promise.all(
+        pairs.map(async ([f1, f2]): Promise<ImageItem> => ({
           id: crypto.randomUUID(),
           filename: f2 ? `${f1.name} + ${f2.name}` : f1.name,
           inputDataUrl: await readFileAsDataURL(f1),
@@ -90,7 +110,7 @@ export default function App() {
 
       setImages((prev) => {
         const updated = updatedLast
-          ? prev.map((img) => (img.id === updatedLast.id ? updatedLast : img))
+          ? prev.map((img) => (img.id === updatedLast!.id ? updatedLast! : img))
           : [...prev];
         return [...updated, ...newItems];
       });
@@ -101,8 +121,8 @@ export default function App() {
       setUploadWarning(warnings.join('. '));
       if (truncated.length === 0) return;
 
-      const newImages = await Promise.all(
-        truncated.map(async (file) => ({
+      const newImages: ImageItem[] = await Promise.all(
+        truncated.map(async (file): Promise<ImageItem> => ({
           id: crypto.randomUUID(),
           filename: file.name,
           inputDataUrl: await readFileAsDataURL(file),
@@ -120,21 +140,21 @@ export default function App() {
 
   // Paste support
   useEffect(() => {
-    const handlePaste = async (e) => {
+    const handlePaste = async (e: ClipboardEvent) => {
       if (!e.clipboardData) return;
       const items = Array.from(e.clipboardData.items);
       const imageFiles = items
         .filter((item) => ACCEPTED_TYPES.includes(item.type))
         .map((item) => item.getAsFile())
-        .filter(Boolean);
+        .filter((f): f is File => f !== null);
       if (imageFiles.length > 0) await processFiles(imageFiles);
     };
     document.addEventListener('paste', handlePaste);
     return () => document.removeEventListener('paste', handlePaste);
   }, [processFiles]);
 
-  function handleFilesSelect(e) {
-    processFiles(e.target.files);
+  function handleFilesSelect(e: ChangeEvent<HTMLInputElement>) {
+    if (e.target.files) processFiles(e.target.files);
   }
 
   function handleCancel() {
@@ -162,6 +182,8 @@ export default function App() {
           mimeType2: img.mimeType2,
           prompt,
           model,
+          ratio,
+          quality,
         });
         if (cancelRef.current) break;
         setImages((prev) =>
@@ -171,9 +193,10 @@ export default function App() {
         );
       } catch (err) {
         if (cancelRef.current) break;
+        const message = err instanceof Error ? err.message : String(err);
         setImages((prev) =>
           prev.map((i) =>
-            i.id === img.id ? { ...i, status: 'error', error: err.message } : i
+            i.id === img.id ? { ...i, status: 'error', error: message } : i
           )
         );
       }
@@ -181,7 +204,7 @@ export default function App() {
     setIsGenerating(false);
   }
 
-  async function handleRegenerate(id) {
+  async function handleRegenerate(id: string) {
     const img = images.find((i) => i.id === id);
     if (!img) return;
     setImages((prev) =>
@@ -195,6 +218,8 @@ export default function App() {
         mimeType2: img.mimeType2,
         prompt,
         model,
+        ratio,
+        quality,
       });
       setImages((prev) =>
         prev.map((i) =>
@@ -202,17 +227,18 @@ export default function App() {
         )
       );
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       setImages((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, status: 'error', error: err.message } : i))
+        prev.map((i) => (i.id === id ? { ...i, status: 'error', error: message } : i))
       );
     }
   }
 
-  function handleDelete(id) {
+  function handleDelete(id: string) {
     setImages((prev) => prev.filter((i) => i.id !== id));
   }
 
-  function handleDownloadOne(id) {
+  function handleDownloadOne(id: string) {
     const img = images.find((i) => i.id === id);
     if (!img || !img.outputDataUrl) return;
     const ext = img.outputDataUrl.match(/^data:image\/([^;]+)/)?.[1] || 'png';
@@ -227,7 +253,7 @@ export default function App() {
   }
 
   async function handleDownloadAll() {
-    const done = images.filter((img) => img.status === 'done');
+    const done = images.filter((img): img is ImageItem & { outputDataUrl: string } => img.status === 'done' && !!img.outputDataUrl);
     if (done.length === 0) return;
     const zip = new JSZip();
     for (const img of done) {
@@ -258,10 +284,14 @@ export default function App() {
         <ConfigPanel
           prompt={prompt}
           model={model}
+          ratio={ratio}
+          quality={quality}
           images={images}
           isGenerating={isGenerating}
           onPromptChange={setPrompt}
-          onModelChange={setModel}
+          onModelChange={handleModelChange}
+          onRatioChange={setRatio}
+          onQualityChange={setQuality}
           inputMode={inputMode}
           onInputModeChange={setInputMode}
           onGenerateAll={handleGenerateAll}
@@ -336,7 +366,9 @@ export default function App() {
                       className="history-item"
                       onClick={() => setLightboxImage(img)}
                     >
-                      <img src={img.outputDataUrl} alt={img.filename} className="history-item__img" />
+                      {img.outputDataUrl && (
+                        <img src={img.outputDataUrl} alt={img.filename} className="history-item__img" />
+                      )}
                       <div className="history-item__filename">{img.filename}</div>
                     </div>
                   ))}

@@ -1,16 +1,20 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ImageCard from './ImageCard';
+import type { Status } from './types';
 
 const baseProps = {
   filename: 'photo_001.jpg',
   inputDataUrl: 'data:image/jpeg;base64,abc',
-  status: 'idle',
+  mimeType: 'image/jpeg',
+  input2DataUrl: null,
+  status: 'idle' as Status,
   outputDataUrl: null,
   error: null,
   isGenerating: false,
   onRegenerate: vi.fn(),
   onDownload: vi.fn(),
+  onDelete: vi.fn(),
 };
 
 test('renders filename', () => {
