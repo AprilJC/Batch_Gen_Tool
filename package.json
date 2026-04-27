@@ -3,10 +3,10 @@
   "private": true,
   "packageManager": "pnpm@10.30.3",
   "scripts": {
-    "dev": "pnpm -r --parallel run dev",
-    "build": "pnpm --filter @batch-gen/client run build",
-    "test": "pnpm -r run test",
-    "typecheck": "pnpm -r run typecheck",
+    "dev": "node scripts/dev.mjs",
+    "build": "npm --prefix packages/client run build",
+    "test": "npm --prefix packages/client run test && npm --prefix packages/server run test",
+    "typecheck": "npm --prefix packages/client run typecheck && npm --prefix packages/server run typecheck",
     "clean": "rm -rf packages/*/node_modules packages/*/dist api/node_modules api/dist node_modules .vercel"
   },
   "devDependencies": {

@@ -1,7 +1,11 @@
 import express, { type Express } from 'express';
 import cors from 'cors';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'node:path';
 import { handle } from './handler';
+
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 export const app: Express = express();
 app.use(cors());
